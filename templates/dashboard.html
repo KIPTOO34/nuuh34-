@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — EpiPredict{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in">
+  <h1>Dashboard</h1>
+  <p>Welcome back, <strong>{{ session.fullname or session.uname }}</strong> ·
+     <span style="color:var(--teal);">{{ (session.role or 'user')|replace('_',' ')|title }}</span></p>
+</div>
+
+<!-- Stat Cards -->
+<div class="stats-grid">
+  <div class="stat-card c-teal">
+    <div class="stat-label">Total Predictions</div>
+    <div class="stat-value" data-countup="{{ total }}">{{ total }}</div>
+    <div class="stat-icon">🔬</div>
+    <div class="stat-sub">All time</div>
+  </div>
+  <div class="stat-card c-red">
+    <div class="stat-label">Outbreaks Detected</div>
+    <div class="stat-value" data-countup="{{ outbr }}">{{ outbr }}</div>
+    <div class="stat-icon">⚠️</div>
+    <div class="stat-sub">High-risk predictions</div>
+  </div>
+  <div class="stat-card c-green">
+    <div class="stat-label">Safe Predictions</div>
+    <div class="stat-value" data-countup="{{ safe }}">{{ safe }}</div>
+    <div class="stat-icon">✅</div>
+    <div class="stat-sub">No outbreak detected</div>
+  </div>
+  <div class="stat-card c-amber">
+    <div class="stat-label">Outbreak Rate</div>
+    <div class="stat-value">{% if total > 0 %}{{ "%.0f"|format(outbr/total*100) }}%{% else %}—{% endif %}</div>
+    <div class="stat-icon">📈</div>
+    <div class="stat-sub">% of high-risk results</div>
+  </div>
+</div>
+
+<!-- Row 2 -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+
+  <!-- Model Metrics -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">🤖 KNN Model Performance</span>
+      <button class="btn btn-sm btn-outline" onclick="retrainModel(this)">🔄 Retrain</button>
+    </div>
+    {% if metrics %}
+    <div class="metrics-row">
+      <div class="metric-box">
+        <div class="metric-val" id="m-accuracy" style="color:var(--teal);">{{ "%.1f"|format(metrics.accuracy*100) }}%</div>
+        <div class="metric-lbl">Accuracy</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-val" id="m-precision" style="color:var(--blue);">{{ "%.1f"|format(metrics.precision*100) }}%</div>
+        <div class="metric-lbl">Precision</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-val" id="m-recall" style="color:var(--amber);">{{ "%.1f"|format(metrics.recall*100) }}%</div>
+        <div class="metric-lbl">Recall</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-val" id="m-f1" style="color:var(--green);">{{ "%.1f"|format(metrics.f1*100) }}%</div>
+        <div class="metric-lbl">F1 Score</div>
+      </div>
+    </div>
+
+    <!-- Accuracy ring -->
+    <div style="display:flex;align-items:center;gap:1.5rem;margin-top:1.25rem;">
+      <div class="ring-wrap">
+        <svg id="acc-ring" width="100" height="100" viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="44"/>
+          <circle class="ring-fill" cx="50" cy="50" r="44"
+                  stroke-dasharray="276.46" stroke-dashoffset="276.46"/>
+        </svg>
+        <div class="ring-label">
+          <div class="ring-val" style="color:var(--teal);">{{ "%.0f"|format(metrics.accuracy*100) }}%</div>
+          <div class="ring-sub">accuracy</div>
+        </div>
+      </div>
+      <div style="font-size:.82rem;color:var(--text2);line-height:1.7;">
+        <div><span style="color:var(--text);">Algorithm:</span> K-Nearest Neighbors (k=7)</div>
+        <div><span style="color:var(--text);">Distance:</span> Euclidean, distance-weighted</div>
+        <div><span style="color:var(--text);">Training set:</span> 800 records</div>
+        <div><span style="color:var(--text);">Test set:</span> 200 records</div>
+        <div><span style="color:var(--text);">Last trained:</span> {{ metrics.trained[:16] }}</div>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="icon">🤖</div>
+      <p>No model metrics yet. <a href="#" onclick="retrainModel(this);return false;">Train model now</a></p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Disease Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">🦠 Disease Breakdown</span>
+      <a href="{{ url_for('predict') }}" class="btn btn-sm btn-outline">+ Predict</a>
+    </div>
+    {% if d_stats %}
+    <div id="disease-bars"></div>
+    <div style="margin-top:1.25rem;display:flex;flex-direction:column;gap:.5rem;">
+      {% for d in d_stats %}
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.83rem;
+                  padding:.55rem .75rem;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+        <span style="font-weight:600;">{{ d.disease }}</span>
+        <div style="display:flex;gap:.75rem;color:var(--text2);">
+          <span>{{ d.cnt }} total</span>
+          <span style="color:#f87171;">{{ d.outbreaks or 0 }} outbreaks</span>
+          <span style="color:#4ade80;">{{ d.cnt - (d.outbreaks or 0) }} safe</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="icon">🦠</div>
+      <p>No predictions yet. <a href="{{ url_for('predict') }}">Make one →</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent Predictions -->
+<div class="card fade-in">
+  <div class="card-header">
+    <span class="card-title">⏱ Recent Predictions</span>
+    <a href="{{ url_for('history') }}" style="font-size:.82rem;color:var(--teal);">View all →</a>
+  </div>
+  {% if recent %}
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Disease</th><th>Temp °C</th><th>Rainfall mm</th>
+          <th>Humidity %</th><th>Pop. Density</th>
+          <th>Outbreak Probability</th><th>Result</th><th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in recent %}
+        <tr>
+          <td style="color:var(--text2);font-size:.8rem;">{{ p.id }}</td>
+          <td><strong>{{ p.disease }}</strong></td>
+          <td>{{ "%.1f"|format(p.temperature) }}</td>
+          <td>{{ "%.1f"|format(p.rainfall) }}</td>
+          <td>{{ "%.1f"|format(p.humidity) }}</td>
+          <td>{{ "%.0f"|format(p.pop_density) }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.5rem;">
+              <div style="width:70px;height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;border-radius:99px;
+                            background:{% if p.result==1 %}#ef4444{% else %}#22c55e{% endif %};
+                            width:{{ p.probability }}%;transition:width 1s;"></div>
+              </div>
+              <span style="font-size:.8rem;font-weight:600;">{{ p.probability }}%</span>
+            </div>
+          </td>
+          <td>
+            {% if p.result==1 %}
+            <span class="badge badge-outbreak">Outbreak</span>
+            {% else %}
+            <span class="badge badge-safe">Safe</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.78rem;color:var(--text2);">{{ p.created[:16] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">🔬</div>
+    <p>No predictions yet. <a href="{{ url_for('predict') }}">Run your first prediction →</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Accuracy ring
+  drawRing('acc-ring', {{ (metrics.accuracy * 100)|round(1) if metrics else 0 }}, 'var(--teal)');
+
+  // Disease bars
+  const dData = [
+    {% for d in d_stats %}
+    { label: '{{ d.disease }}', value: {{ d.cnt }} },
+    {% endfor %}
+  ];
+  drawBars('disease-bars', dData);
+});
+</script>
+{% endblock %}

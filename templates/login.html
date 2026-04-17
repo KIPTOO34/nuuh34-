@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Seasonal Disease Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #0b1120 0%, #192132 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: #111827;
+            border-radius: 32px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 450px;
+            margin: 2rem;
+            border: 1px solid #2d3a5e;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.5);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #5ee0c0, #3b9eff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logo p {
+            font-size: 0.8rem;
+            color: #7a8fb0;
+            margin-top: 0.25rem;
+        }
+        .welcome {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #d3e4ff;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #9eb0d0;
+            margin-bottom: 0.5rem;
+        }
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: #1f2937;
+            border: 1px solid #2d3a5e;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b9eff;
+        }
+        .btn-signin {
+            width: 100%;
+            padding: 0.8rem;
+            background: #2b6ef0;
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+        }
+        .btn-signin:hover {
+            background: #1e5ad9;
+            transform: translateY(-1px);
+        }
+        .links {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+        }
+        .links a {
+            color: #5ee0c0;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.7rem;
+            color: #7a8fb0;
+            border-top: 1px solid #1f2d4a;
+            padding-top: 1.5rem;
+        }
+        .flash-messages {
+            margin-bottom: 1rem;
+        }
+        .flash {
+            padding: 0.75rem;
+            border-radius: 12px;
+            background: #1f2937;
+            border-left: 4px solid;
+            margin-bottom: 0.5rem;
+        }
+        .flash.success { border-left-color: #10b981; color: #10b981; }
+        .flash.error { border-left-color: #ef4444; color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">
+            <h1>Seasonal Disease Predictor</h1>
+            <p>Disease Outbreak Prediction System</p>
+        </div>
+
+        <div class="welcome">Welcome back</div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <label>USERNAME</label>
+                <input type="text" name="username" required>
+            </div>
+            <div class="form-group">
+                <label>PASSWORD</label>
+                <input type="password" name="password" required>
+            </div>
+            <button type="submit" class="btn-signin">Sign In →</button>
+        </form>
+
+        <div class="links">
+            Don't have an account? <a href="{{ url_for('register') }}">Create one</a>
+        </div>
+
+        <div class="footer">
+        </div>
+    </div>
+</body>
+</html>

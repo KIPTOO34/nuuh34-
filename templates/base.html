@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Seasonal disease predictor{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<!-- Chart.js CDN for charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% block head %}{% endblock %}
+</head>
+<body>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flashes">
+  {% for cat,msg in messages %}
+  <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🦠</div>
+      <div class="brand-text">
+        <div class="name">Seasonal disease predictor</div>
+        <div class="tagline">Disease Prediction</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">Main</div>
+      <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}">
+        <span class="ni">📊</span> Dashboard
+      </a>
+      <a href="{{ url_for('predict') }}" class="nav-link {% if request.endpoint=='predict' %}active{% endif %}">
+        <span class="ni">🔬</span> Run Prediction
+      </a>
+      <a href="{{ url_for('history') }}" class="nav-link {% if request.endpoint=='history' %}active{% endif %}">
+        <span class="ni">📋</span> History
+      </a>
+      <a href="{{ url_for('model_comparison') }}" class="nav-link {% if request.endpoint=='model_comparison' %}active{% endif %}">
+        <span class="ni">📊</span> Model Comparison
+      </a>
+      <!-- NEW: Outbreak Map Link -->
+      <a href="{{ url_for('outbreak_map') }}" class="nav-link {% if request.endpoint=='outbreak_map' %}active{% endif %}">
+        <span class="ni">🗺️</span> Outbreak Map
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">{{ session.uname[0]|upper if session.uname else 'U' }}</div>
+        <div>
+          <div class="user-name">{{ session.fullname or session.uname }}</div>
+          <div class="user-role">{{ (session.role or 'user')|replace('_',' ') }}</div>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn-logout">Sign Out</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

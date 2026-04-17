@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Outbreak Map — Seasonal Disease Predictor{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+    #map { height: 500px; border-radius: 16px; margin-top: 1rem; }
+    .map-legend {
+        background: var(--surface2);
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        display: inline-flex;
+        gap: 1.5rem;
+    }
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+    .legend-color.red { background: #ef4444; }
+    .legend-color.green { background: #22c55e; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in">
+  <h1>🗺️ Outbreak Risk Map</h1>
+  <p>Locations of predicted outbreaks in rural communities (based on your prediction history).</p>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Rural Communities Map</span>
+  </div>
+  <div class="map-legend">
+    <div class="legend-item"><div class="legend-color red"></div> Outbreak predicted</div>
+    <div class="legend-item"><div class="legend-color green"></div> No outbreak predicted</div>
+  </div>
+  <div id="map"></div>
+  {% if not markers %}
+  <div class="empty-state" style="margin-top: 1rem;">
+    <div class="icon">🗺️</div>
+    <p>No predictions with region data yet. Add a region when making predictions to see them on the map.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Center on Kenya (approximate)
+    var map = L.map('map').setView([0.0236, 37.9062], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var markers = {{ markers|tojson }};
+    markers.forEach(function(m) {
+        var color = m.result === 1 ? '#ef4444' : '#22c55e';
+        var popupContent = `
+            <strong>${m.disease}</strong><br>
+            Region: ${m.region}<br>
+            Probability: ${m.probability}%<br>
+            Result: ${m.label}<br>
+            Date: ${m.date}
+        `;
+        L.circleMarker([m.lat, m.lon], {
+            radius: 8,
+            fillColor: color,
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).bindPopup(popupContent).addTo(map);
+    });
+});
+</script>
+{% endblock %}

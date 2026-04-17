@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Model Comparison — EpiPredict{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in">
+  <h1>Model Comparison</h1>
+  <p>K‑Nearest Neighbors vs. Neural Network (MLP)</p>
+</div>
+
+<div class="card fade-in">
+  <div class="card-header">
+    <span class="card-title">📊 Performance Metrics</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <!-- KNN Card -->
+    <div>
+      <h3 style="color: var(--teal); margin-bottom: 1rem;">K‑Nearest Neighbors (k=7)</h3>
+      <div class="metrics-row" style="margin-bottom: 1rem;">
+        <div class="metric-box"><div class="metric-val">{{ comparison.knn.accuracy }}%</div><div class="metric-lbl">Accuracy</div></div>
+        <div class="metric-box"><div class="metric-val">{{ comparison.knn.precision }}%</div><div class="metric-lbl">Precision</div></div>
+        <div class="metric-box"><div class="metric-val">{{ comparison.knn.recall }}%</div><div class="metric-lbl">Recall</div></div>
+        <div class="metric-box"><div class="metric-val">{{ comparison.knn.f1 }}%</div><div class="metric-lbl">F1 Score</div></div>
+      </div>
+      <h4 style="margin-top: 1rem;">Confusion Matrix</h4>
+      <div style="overflow-x: auto;">
+        <table style="width: auto; margin: 0 auto;">
+          <tr><th></th><th>Predicted No</th><th>Predicted Yes</th></tr>
+          <tr><th>Actual No</th><td style="background:#1f2b44;">{{ comparison.knn.confusion_matrix[0][0] }}</td><td style="background:#1f2b44;">{{ comparison.knn.confusion_matrix[0][1] }}</td></tr>
+          <tr><th>Actual Yes</th><td style="background:#1f2b44;">{{ comparison.knn.confusion_matrix[1][0] }}</td><td style="background:#1f2b44;">{{ comparison.knn.confusion_matrix[1][1] }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- MLP Card -->
+    <div>
+      <h3 style="color: var(--blue); margin-bottom: 1rem;">Neural Network (MLP)</h3>
+      <div class="metrics-row" style="margin-bottom: 1rem;">
+        <div class="metric-box"><div class="metric-val">{{ comparison.mlp.accuracy }}%</div><div class="metric-lbl">Accuracy</div></div>
+        <div class="metric-box"><div class="metric-val">{{ comparison.mlp.precision }}%</div><div class="metric-lbl">Precision</div></div>
+        <div class="metric-box"><div class="metric-val">{{ comparison.mlp.recall }}%</div><div class="metric-lbl">Recall</div></div>
+        <div class="metric-box"><div class="metric-val">{{ comparison.mlp.f1 }}%</div><div class="metric-lbl">F1 Score</div></div>
+      </div>
+      <h4 style="margin-top: 1rem;">Confusion Matrix</h4>
+      <div style="overflow-x: auto;">
+        <table style="width: auto; margin: 0 auto;">
+          <tr><th></th><th>Predicted No</th><th>Predicted Yes</th></tr>
+          <tr><th>Actual No</th><td style="background:#1f2b44;">{{ comparison.mlp.confusion_matrix[0][0] }}</td><td style="background:#1f2b44;">{{ comparison.mlp.confusion_matrix[0][1] }}</td></tr>
+          <tr><th>Actual Yes</th><td style="background:#1f2b44;">{{ comparison.mlp.confusion_matrix[1][0] }}</td><td style="background:#1f2b44;">{{ comparison.mlp.confusion_matrix[1][1] }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 2rem; padding: 1rem; background: #141e36; border-radius: 16px;">
+    <p style="margin: 0; color: #a0b0d0;">🔍 Both models were trained on the same data (80% train / 20% test). The neural network uses a single hidden layer with 100 neurons, ReLU activation, and Adam optimizer. This comparison shows that KNN (simple, interpretable) achieves very competitive results against a more complex deep learning model – making it ideal for resource‑limited rural settings.</p>
+  </div>
+</div>
+
+<div style="margin-top: 1rem; text-align: center;">
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary">← Back to Dashboard</a>
+</div>
+{% endblock %}

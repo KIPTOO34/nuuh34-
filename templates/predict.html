@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% block title %}Predict — Seasonal Disease Predictor{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in">
+  <h1>Run Prediction</h1>
+  <p>Enter environmental data below — the KNN model will compute the outbreak probability using 7 nearest neighbours.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 370px;gap:1.5rem;align-items:start;">
+
+  <!-- FORM -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <span class="card-title">🌡️ Environmental Input</span>
+      <span style="font-size:.78rem;color:var(--text2);">All fields required</span>
+    </div>
+
+    <form method="POST" id="pred-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.25rem;">
+
+        <!-- Disease -->
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">Disease Type</label>
+          <div class="input-icon-wrap">
+            <span class="icon">🦠</span>
+            <select class="form-select" name="disease" required>
+              <option value="">Select seasonal disease...</option>
+              {% for d in diseases %}
+              <option value="{{ d }}" {% if result and result.disease==d %}selected{% endif %}>
+                {% if d=='Malaria' %}🦟{% elif d=='Cholera' %}💧{% elif d=='Typhoid' %}🌡{% else %}🤧{% endif %}
+                {{ d }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Temperature -->
+        <div class="form-group">
+          <label class="form-label">Temperature (°C)</label>
+          <input class="form-input" type="number" name="temperature" id="t-val"
+                 step="0.1" min="10" max="45" placeholder="e.g. 28.5"
+                 value="{{ result.temp if result else '' }}" required
+                 oninput="document.getElementById('t-sl').value=this.value">
+          <input type="range" id="t-sl" min="10" max="45" step="0.1"
+                 value="{{ result.temp if result else 25 }}"
+                 oninput="document.getElementById('t-val').value=this.value">
+          <div class="range-labels"><span>10°C</span><span>45°C</span></div>
+        </div>
+
+        <!-- Rainfall -->
+        <div class="form-group">
+          <label class="form-label">Rainfall (mm)</label>
+          <input class="form-input" type="number" name="rainfall" id="r-val"
+                 step="0.1" min="0" max="500" placeholder="e.g. 150.0"
+                 value="{{ result.rain if result else '' }}" required
+                 oninput="document.getElementById('r-sl').value=this.value">
+          <input type="range" id="r-sl" min="0" max="500" step="0.1"
+                 value="{{ result.rain if result else 100 }}"
+                 oninput="document.getElementById('r-val').value=this.value">
+          <div class="range-labels"><span>0 mm</span><span>500 mm</span></div>
+        </div>
+
+        <!-- Humidity -->
+        <div class="form-group">
+          <label class="form-label">Humidity (%)</label>
+          <input class="form-input" type="number" name="humidity" id="h-val"
+                 step="0.1" min="0" max="100" placeholder="e.g. 75.0"
+                 value="{{ result.hum if result else '' }}" required
+                 oninput="document.getElementById('h-sl').value=this.value">
+          <input type="range" id="h-sl" min="0" max="100" step="0.1"
+                 value="{{ result.hum if result else 60 }}"
+                 oninput="document.getElementById('h-val').value=this.value">
+          <div class="range-labels"><span>0%</span><span>100%</span></div>
+        </div>
+
+        <!-- Population density -->
+        <div class="form-group">
+          <label class="form-label">Population Density (per km²)</label>
+          <input class="form-input" type="number" name="pop_density" id="p-val"
+                 step="1" min="10" max="2000" placeholder="e.g. 450"
+                 value="{{ result.pop|int if result else '' }}" required
+                 oninput="document.getElementById('p-sl').value=this.value">
+          <input type="range" id="p-sl" min="10" max="2000" step="1"
+                 value="{{ result.pop|int if result else 500 }}"
+                 oninput="document.getElementById('p-val').value=this.value">
+          <div class="range-labels"><span>10</span><span>2000/km²</span></div>
+        </div>
+
+        <!-- NEW: Region (Rural Community) -->
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">Community / Region</label>
+          <div class="input-icon-wrap">
+            <span class="icon">🗺️</span>
+            <input type="text" class="form-input" name="region" placeholder="e.g., Embu, Meru, Kisumu"
+                   value="{{ result.region if result else '' }}" 
+                   list="region-suggestions">
+            <datalist id="region-suggestions">
+              <option>Embu</option><option>Meru</option><option>Machakos</option><option>Kitui</option>
+              <option>Kakamega</option><option>Bungoma</option><option>Busia</option><option>Siaya</option>
+              <option>Kisumu</option><option>Homa Bay</option><option>Migori</option><option>Kisii</option>
+              <option>Nyamira</option><option>Narok</option><option>Kajiado</option><option>Laikipia</option>
+              <option>Nyeri</option><option>Kirinyaga</option><option>Murang'a</option><option>Kiambu</option>
+            </datalist>
+          </div>
+          <small style="color: var(--text2);">Rural community name – used for mapping outbreak locations</small>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <button type="submit" class="btn btn-primary">🔍 Predict Outbreak</button>
+        <button type="reset" class="btn btn-outline" onclick="resetSliders()">↺ Reset</button>
+      </div>
+    </form>
+
+    <!-- RESULT -->
+    {% if result %}
+    <div class="result-box {% if result.pred==1 %}result-outbreak{% else %}result-safe{% endif %}">
+      <div style="display:flex;align-items:flex-start;gap:1.25rem;flex-wrap:wrap;">
+        <div style="font-size:3rem;line-height:1;">{% if result.pred==1 %}⚠️{% else %}✅{% endif %}</div>
+        <div>
+          <div class="result-title">{{ result.label }}</div>
+          <div style="color:var(--text2);margin-top:.3rem;font-size:.9rem;">
+            <strong style="color:var(--text);">{{ result.disease }}</strong> ·
+            KNN k=7 · Euclidean distance
+            {% if result.region %} · <span style="color:var(--teal);">📍 {{ result.region }}</span>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Probability -->
+      <div class="prob-wrap">
+        <div class="prob-label">
+          <span>Outbreak Probability</span>
+          <strong style="color:{% if result.pred==1 %}#f87171{% else %}#4ade80{% endif %};">
+            {{ result.prob }}%
+          </strong>
+        </div>
+        <div class="prob-bar">
+          <div class="prob-fill" id="prob-fill" style="width:0%;"></div>
+        </div>
+      </div>
+
+      <!-- Input summary -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-top:1rem;">
+        {% for lbl,val in [('🌡 Temp', result.temp|string+'°C'),
+                           ('🌧 Rainfall', result.rain|string+' mm'),
+                           ('💧 Humidity', result.hum|string+'%'),
+                           ('👥 Pop Density', (result.pop|int)|string+'/km²')] %}
+        <div style="background:rgba(255,255,255,.04);padding:.65rem;border-radius:9px;text-align:center;">
+          <div style="font-size:.75rem;color:var(--text2);">{{ lbl.split(' ')[0] }} {{ lbl.split(' ')[1] }}</div>
+          <div style="font-weight:700;margin-top:.2rem;font-size:.9rem;">{{ val }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- 7 neighbours -->
+      <div style="margin-top:1rem;">
+        <div style="font-size:.78rem;color:var(--text2);margin-bottom:.4rem;">7 Nearest Neighbours (Euclidean distances):</div>
+        <div class="neighbors">
+          {% for n in result.neighbors %}
+          <div class="neighbor-dot"
+               style="border-color:{% if loop.index<=3 %}var(--teal){% else %}var(--border2){% endif %};
+                      color:{% if loop.index<=3 %}var(--teal){% else %}var(--text2){% endif %};"
+               title="Distance: {{ n.dist }}">
+            K{{ loop.index }}
+          </div>
+          {% endfor %}
+        </div>
+        <div style="font-size:.72rem;color:var(--text2);margin-top:.3rem;">Closest neighbours shown in teal</div>
+      </div>
+
+      <!-- Recommendation -->
+      {% if result.pred==1 %}
+      <div style="margin-top:1rem;padding:.9rem;background:rgba(240,77,77,.1);border-radius:9px;border-left:3px solid #ef4444;font-size:.85rem;">
+        <strong>⚠️ Recommended Actions:</strong><br>
+        Alert health authorities immediately · Deploy medical supplies · Launch community awareness campaigns ·
+        Implement vector control measures · Increase surveillance in the area.
+      </div>
+      {% else %}
+      <div style="margin-top:1rem;padding:.9rem;background:rgba(34,197,94,.1);border-radius:9px;border-left:3px solid #22c55e;font-size:.85rem;">
+        <strong>✅ Status:</strong> Environmental conditions suggest low outbreak risk.
+        Continue routine surveillance, maintain hygiene standards, and monitor changes in conditions.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div style="display:flex;flex-direction:column;gap:1rem;">
+    <div class="card card-sm">
+      <div class="card-title" style="margin-bottom:.85rem;">📖 How KNN Works</div>
+      {% for step,desc in [
+        ('1','Input environmental data is encoded & normalised'),
+        ('2','Euclidean distance computed to all training records'),
+        ('3','Top 7 nearest neighbours selected (distance-weighted)'),
+        ('4','Majority vote determines outbreak class'),
+        ('5','Class probability returned as confidence score')
+      ] %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start;margin-bottom:.7rem;">
+        <div style="background:rgba(0,201,167,.15);color:var(--teal);padding:.25rem .55rem;
+                    border-radius:6px;font-weight:700;font-size:.75rem;flex-shrink:0;">{{ step }}</div>
+        <span style="font-size:.82rem;color:var(--text2);">{{ desc }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card card-sm">
+      <div class="card-title" style="margin-bottom:.85rem;">🦠 Disease Risk Factors</div>
+      {% for disease,icon,factors in [
+        ('Malaria','🦟','High rainfall, warm temps (24-35°C), high humidity'),
+        ('Cholera','💧','Heavy rainfall, flooding, dense populations'),
+        ('Typhoid','🌡','Hot dry season, poor sanitation, crowding'),
+        ('Influenza','🤧','Cool dry conditions, low humidity, dense areas')
+      ] %}
+      <div style="padding:.6rem .75rem;background:var(--surface2);border-radius:8px;
+                  border:1px solid var(--border);margin-bottom:.5rem;">
+        <div style="font-weight:600;font-size:.85rem;margin-bottom:.15rem;">{{ icon }} {{ disease }}</div>
+        <div style="font-size:.77rem;color:var(--text2);">{{ factors }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card card-sm">
+      <div class="card-title" style="margin-bottom:.75rem;">📊 Quick Stats</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.83rem;">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--text2);">Model:</span><span>KNN (k=7)</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--text2);">Training Records:</span><span>800</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--text2);">Test Records:</span><span>200</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--text2);">Diseases Covered:</span><span>4</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--text2);">Distance Metric:</span><span>Euclidean</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function resetSliders() {
+  document.getElementById('t-sl').value = 25;
+  document.getElementById('r-sl').value = 100;
+  document.getElementById('h-sl').value = 60;
+  document.getElementById('p-sl').value = 500;
+}
+
+{% if result %}
+document.addEventListener('DOMContentLoaded', () => {
+  animateProbBar('prob-fill', {{ result.prob }});
+});
+{% endif %}
+</script>
+{% endblock %}

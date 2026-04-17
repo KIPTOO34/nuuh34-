@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Register — Seasonal Disease Predictor{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in">
+  <h1>Register</h1>
+  <p>Create your account to start predicting seasonal disease outbreaks.</p>
+</div>
+
+<div class="card fade-in" style="max-width: 520px; margin: 0 auto;">
+  <div class="card-header">
+    <span class="card-title">📝 Account Information</span>
+  </div>
+
+  <form method="POST" action="{{ url_for('register') }}">
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+      <!-- Full Name -->
+      <div class="form-group">
+        <label class="form-label">FULL NAME</label>
+        <input type="text" class="form-input" name="fullname" placeholder="e.g. Collins Kiptoo" required>
+      </div>
+
+      <!-- Username -->
+      <div class="form-group">
+        <label class="form-label">USERNAME</label>
+        <input type="text" class="form-input" name="username" placeholder="username" required>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label">EMAIL</label>
+        <input type="email" class="form-input" name="email" placeholder="you@email.com" required>
+      </div>
+
+      <!-- Role (radio buttons) -->
+      <div class="form-group">
+        <label class="form-label">ROLE</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="radio" name="role" value="health_worker" checked> Health Worker
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="radio" name="role" value="researcher"> Researcher
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="radio" name="role" value="administrator"> Administrator
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="radio" name="role" value="public_health"> Public Health
+          </label>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label class="form-label">PASSWORD</label>
+        <input type="password" class="form-input" name="password" placeholder="Min. 6 characters" required>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label class="form-label">CONFIRM PASSWORD</label>
+        <input type="password" class="form-input" name="confirm_password" placeholder="Repeat password" required>
+      </div>
+
+      <!-- Submit button -->
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Create Account →</button>
+    </div>
+  </form>
+
+  <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem;">
+    Already have an account? <a href="{{ url_for('login') }}" style="color: var(--teal);">Sign in</a>
+  </div>
+</div>
+{% endblock %}

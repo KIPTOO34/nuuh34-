@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}History — EpiPredict{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in">
+  <h1>Prediction History</h1>
+  <p>{{ predictions|length }} total prediction(s) made by your account.</p>
+</div>
+
+<div class="card fade-in">
+  <div class="card-header" style="flex-wrap:wrap;gap:.75rem;">
+    <span class="card-title">📋 All Predictions</span>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+      <input type="text" id="search-input" class="form-input"
+             placeholder="🔍 Search by disease..."
+             style="width:200px;padding:.5rem .9rem;font-size:.85rem;">
+      <select id="filter-result" class="form-select"
+              style="width:150px;padding:.5rem .9rem;font-size:.85rem;">
+        <option value="">All Results</option>
+        <option value="outbreak">Outbreak Only</option>
+        <option value="safe">Safe Only</option>
+      </select>
+      <select id="filter-disease" class="form-select"
+              style="width:150px;padding:.5rem .9rem;font-size:.85rem;">
+        <option value="">All Diseases</option>
+        <option value="malaria">Malaria</option>
+        <option value="cholera">Cholera</option>
+        <option value="typhoid">Typhoid</option>
+        <option value="influenza">Influenza</option>
+      </select>
+    </div>
+  </div>
+
+  {% if predictions %}
+  <div class="tbl-wrap">
+    <table id="hist-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Disease</th>
+          <th>Temp (°C)</th>
+          <th>Rainfall (mm)</th>
+          <th>Humidity (%)</th>
+          <th>Pop. Density</th>
+          <th>Outbreak Probability</th>
+          <th>Result</th>
+          <th>Date & Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in predictions %}
+        <tr data-disease="{{ p.disease|lower }}" data-result="{{ 'outbreak' if p.result==1 else 'safe' }}">
+          <td style="color:var(--text2);font-size:.8rem;">{{ p.id }}</td>
+          <td>
+            <strong>
+              {% if p.disease=='Malaria' %}🦟{% elif p.disease=='Cholera' %}💧
+              {% elif p.disease=='Typhoid' %}🌡{% else %}🤧{% endif %}
+              {{ p.disease }}
+            </strong>
+          </td>
+          <td>{{ "%.1f"|format(p.temperature) }}</td>
+          <td>{{ "%.1f"|format(p.rainfall) }}</td>
+          <td>{{ "%.1f"|format(p.humidity) }}</td>
+          <td>{{ "%.0f"|format(p.pop_density) }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.5rem;">
+              <div style="width:70px;height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;">
+                <div style="height:100%;border-radius:99px;
+                            background:{% if p.result==1 %}#ef4444{% else %}#22c55e{% endif %};
+                            width:{{ p.probability }}%;"></div>
+              </div>
+              <span style="font-size:.82rem;font-family:'JetBrains Mono',monospace;">
+                {{ p.probability }}%
+              </span>
+            </div>
+          </td>
+          <td>
+            {% if p.result==1 %}
+            <span class="badge badge-outbreak">Outbreak</span>
+            {% else %}
+            <span class="badge badge-safe">Safe</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.78rem;color:var(--text2);white-space:nowrap;">
+            {{ p.created[:16] }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Summary stats -->
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border);">
+    <div style="font-size:.82rem;color:var(--text2);">
+      Total: <strong style="color:var(--text);">{{ predictions|length }}</strong>
+    </div>
+    <div style="font-size:.82rem;color:var(--text2);">
+      Outbreaks: <strong style="color:#f87171;">{{ predictions|selectattr('result','eq',1)|list|length }}</strong>
+    </div>
+    <div style="font-size:.82rem;color:var(--text2);">
+      Safe: <strong style="color:#4ade80;">{{ predictions|selectattr('result','eq',0)|list|length }}</strong>
+    </div>
+    {% set avg_prob = predictions|map(attribute='probability')|list %}
+    <div style="font-size:.82rem;color:var(--text2);">
+      Avg. Probability:
+      <strong style="color:var(--teal);">
+        {{ "%.1f"|format(avg_prob|sum / avg_prob|length if avg_prob else 0) }}%
+      </strong>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">📋</div>
+    <p>No predictions recorded yet.</p>
+    <a href="{{ url_for('predict') }}" class="btn btn-primary btn-sm" style="margin-top:1rem;display:inline-flex;">
+      Make your first prediction →
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const rows = document.querySelectorAll('#hist-table tbody tr');
+
+  function applyFilters() {
+    const q       = document.getElementById('search-input').value.toLowerCase();
+    const result  = document.getElementById('filter-result').value;
+    const disease = document.getElementById('filter-disease').value;
+
+    rows.forEach(r => {
+      const matchQ = !q || r.dataset.disease.includes(q) || r.textContent.toLowerCase().includes(q);
+      const matchR = !result  || r.dataset.result === result;
+      const matchD = !disease || r.dataset.disease === disease;
+      r.style.display = (matchQ && matchR && matchD) ? '' : 'none';
+    });
+  }
+
+  document.getElementById('search-input').addEventListener('input', applyFilters);
+  document.getElementById('filter-result').addEventListener('change', applyFilters);
+  document.getElementById('filter-disease').addEventListener('change', applyFilters);
+});
+</script>
+{% endblock %}
